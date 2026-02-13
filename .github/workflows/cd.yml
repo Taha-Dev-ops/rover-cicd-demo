@@ -1,0 +1,36 @@
+name: CD Pipeline - Auto Deploy
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Code download
+      uses: actions/checkout@v3
+    
+    - name: Setup SSH
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan -H 192.168.88.132 >> ~/.ssh/known_hosts
+    
+    - name: Create deploy directory
+      run: |
+        ssh root@192.168.88.132 "mkdir -p /root/rover-deploy"
+    
+    - name: Copy deployment script
+      run: |
+        scp deploy.sh root@192.168.88.132:/root/rover-deploy/
+    
+    - name: Run deployment
+      run: |
+        ssh root@192.168.88.132 "cd /root/rover-deploy && chmod +x deploy.sh && ./deploy.sh"
+    
+    - name: Verify deployment
+      run: |
+        ssh root@192.168.88.132 "cat /tmp/rover-cd-demo.txt"
