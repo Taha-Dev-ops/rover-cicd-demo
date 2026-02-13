@@ -1,0 +1,35 @@
+name: SSH Debug
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  debug-ssh:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Check SSH key
+      run: |
+        echo "=== SSH Key Info ==="
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" | head -5
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" | tail -5
+        echo "Key length: $(echo "${{ secrets.SSH_PRIVATE_KEY }}" | wc -l) lines"
+    
+    - name: Write key to file
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ls -la ~/.ssh/
+    
+    - name: Check key format
+      run: |
+        echo "=== First line ==="
+        head -1 ~/.ssh/id_rsa
+        echo "=== Last line ==="
+        tail -1 ~/.ssh/id_rsa
+    
+    - name: Test SSH connection with verbose
+      run: |
+        ssh -vvv -o StrictHostKeyChecking=no -o ConnectTimeout=10 root@192.168.88.132 "echo 'connected'"
